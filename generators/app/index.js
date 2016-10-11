@@ -75,7 +75,8 @@ var handleSpring = function(type,context){
   //copy over the directory
 
   console.log("Creating the " + context.answers.name + " view folder");
-  var destination = context.ambariLocation.ambariLocation + "/contrib/views"+"/"+context.answers.name;
+  var ambariLocation = context.ambariExists.ambariExists? context.ambariLocation.ambariLocation:context.ambariLocation;
+  var destination = ambariLocation + "/contrib/views"+"/"+context.answers.name;
   mkdirp(destination);
 
   context.fs.copy(
@@ -106,7 +107,8 @@ var handleServlet = function(type,context){
   //copy over the directory
 
   console.log("Creating the " + context.answers.name + " view folder");
-  var destination = context.ambariLocation.ambariLocation + "/contrib/views"+"/"+context.answers.name;
+  var ambariLocation = context.ambariExists.ambariExists? context.ambariLocation.ambariLocation:context.ambariLocation;
+  var destination = ambariLocation + "/contrib/views"+"/"+context.answers.name;
   mkdirp(destination);
 
   context.fs.copy(
@@ -135,7 +137,8 @@ var handleJavaEmber = function(type,context){
 
   console.log("Creating the " + context.answers.name + " view folder");
 
-  var destination = context.ambariLocation.ambariLocation + "/contrib/views"+"/"+context.answers.name;
+  var ambariLocation = context.ambariExists.ambariExists? context.ambariLocation.ambariLocation:context.ambariLocation;
+  var destination = ambariLocation + "/contrib/views"+"/"+context.answers.name;
   mkdirp(destination);
 
   context.fs.copy(
@@ -296,9 +299,10 @@ module.exports = yeoman.Base.extend({
       } else {
         console.log("--------------------------------------------------");
         console.log("I will clone Ambari in your current directory");
-        console.log("---------------------Starting---------------------");
+        console.log("You will find your new view at ambari/contrib/views/"+this.answers.name);
+        console.log("\n");
         this.spawnCommandSync('git', ['clone', "https://github.com/apache/ambari.git"]);
-        console.log("---------------------Done-------------------------");
+        console.log("\n");
 
         this.ambariLocation = process.cwd() + "/ambari";
       }
