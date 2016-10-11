@@ -37,9 +37,9 @@ function copyTemplate(context, which, where,useRealPaths) {
       });
 }
 
-function cleanUp(context) {
+function cleanUp(context,destination) {
   console.log("Cleaning up");
-  context.fs.delete(context.destinationPath(context.answers.name) + "/view.xml.template");
+  context.fs.delete(destination + "/view.xml.template");
 }
 var handleSimpleHtml = function(type,context){
 
@@ -60,7 +60,7 @@ var handleSimpleHtml = function(type,context){
 
   copyTemplate(context,"simple-html-view/view.xml.template",context.answers.name+"/src/main/resources/view.xml");
   // delete the template file
-  cleanUp(context);
+  cleanUp(context,context.destinationPath(context.answers.name));
 
 };
 
@@ -75,17 +75,19 @@ var handleSpring = function(type,context){
   //copy over the directory
 
   console.log("Creating the " + context.answers.name + " view folder");
+  var destination = context.ambariLocation.ambariLocation + "/contrib/views"+"/"+context.answers.name;
+  mkdirp(destination);
 
   context.fs.copy(
       context.templatePath('spring-view/'),
-      context.destinationPath(context.answers.name)
+      destination
   );
 
-  copyTemplate(context,"spring-view/view.xml.template",context.answers.name+"/src/main/resources/view.xml");
-  copyTemplate(context,"spring-view/pom.xml",context.answers.name+"/pom.xml");
-  copyTemplate(context,"spring-view/docs/index.md",context.answers.name+"/docs/index.md");
+  copyTemplate(context,"spring-view/view.xml.template",destination+"/src/main/resources/view.xml",true);
+  copyTemplate(context,"spring-view/pom.xml",destination+"/pom.xml",true);
+  copyTemplate(context,"spring-view/docs/index.md",destination+"/docs/index.md",true);
   // delete the template file
-  cleanUp(context);
+  cleanUp(context,destination);
 
 
   //overwrite the pom.xml and doc files
@@ -104,17 +106,19 @@ var handleServlet = function(type,context){
   //copy over the directory
 
   console.log("Creating the " + context.answers.name + " view folder");
+  var destination = context.ambariLocation.ambariLocation + "/contrib/views"+"/"+context.answers.name;
+  mkdirp(destination);
 
   context.fs.copy(
       context.templatePath('servlet-view/'),
-      context.destinationPath(context.answers.name)
+      destination
   );
 
-  copyTemplate(context,"servlet-view/view.xml.template",context.answers.name+"/src/main/resources/view.xml");
-  copyTemplate(context,"servlet-view/pom.xml",context.answers.name+"/pom.xml");
-  copyTemplate(context,"servlet-view/docs/index.md",context.answers.name+"/docs/index.md");
+  copyTemplate(context,"servlet-view/view.xml.template",destination+"/src/main/resources/view.xml",true);
+  copyTemplate(context,"servlet-view/pom.xml",destination+"/pom.xml",true);
+  copyTemplate(context,"servlet-view/docs/index.md",destination+"/docs/index.md",true);
   // delete the template file
-  cleanUp(context);
+  cleanUp(context,destination);
 
 
 };
@@ -139,11 +143,10 @@ var handleJavaEmber = function(type,context){
       destination
   );
 
-  copyTemplate(context,"simple-java-ember/view.xml.template",destination+"/src/main/resources/view.xml");
-  copyTemplate(context,"simple-java-ember/pom.xml",destination+"/pom.xml");
-  copyTemplate(context,"simple-java-ember/docs/index.md",destination+"/docs/index.md");
+  copyTemplate(context,"simple-java-ember/view.xml.template",destination+"/src/main/resources/view.xml",true);
+  copyTemplate(context,"simple-java-ember/pom.xml",destination+"/pom.xml",true);
   // delete the template file
-  cleanUp(context);
+  cleanUp(context,destination);
 
 
 };
@@ -186,12 +189,6 @@ module.exports = yeoman.Base.extend({
       choices: [{
         name: 'Spring',
         value: 'includeSpring'
-      },{
-        name: 'Spring with EmberJS',
-        value: 'includeSpringEmber'
-      },{
-        name: 'Jersey',
-        value: 'includeJersey'
       },{
         name: 'Jersey with EmberJS',
         value: 'includeJerseyEmber'
