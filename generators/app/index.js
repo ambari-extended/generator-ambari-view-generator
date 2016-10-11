@@ -161,7 +161,12 @@ function isJavaView(answers) {
       || answers.framework === "includeServlet";
 }
 module.exports = yeoman.Base.extend({
+
   prompting: function () {
+
+    console.log(files.readFileSync(this.templatePath("banner.txt"),'utf-8'));
+
+
     return this.prompt([{
       type    : 'input',
       name    : 'name',
