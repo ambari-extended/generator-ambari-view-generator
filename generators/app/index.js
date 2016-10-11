@@ -4,22 +4,27 @@ var chalk = require('chalk');
 var yosay = require('yosay');
 var files = require('fs');
 var Handlebars = require('handlebars');
+const os = require('os');
+var mkdirp = require('mkdirp');
 
 
-var mapping = {"includeHTML":"simple-html-view","includeSpring":"spring-view","includeServlet":"servlet-view"};
+var mapping = {"includeHTML":"simple-html-view","includeSpring":"spring-view","includeServlet":"servlet-view",
+              "includeJerseyEmber":"simple-java-ember"};
 
 
 //Utilities
 
-function copyTemplate(context, which, where) {
+function copyTemplate(context, which, where,useRealPaths) {
   files.readFile(context.templatePath(which), {encoding: 'utf-8'}, function (err, data){
       if (!err){
         var template = Handlebars.compile(data);
         var data = { "name": context.answers.name, "label": context.answers.label,"version":context.answers.version,
           "min_ambari_version":context.answers.ambariVersion};
         var result = template(data);
-
-        files.writeFile(context.destinationPath(where), result, function(err) {
+        var destination = context.destinationPath(where);
+        if(useRealPaths)
+            destination = where;
+        files.writeFile(destination, result, function(err) {
           if(err) {
             return console.log(err);
           }
@@ -53,9 +58,9 @@ var handleSimpleHtml = function(type,context){
       context.destinationPath(context.answers.name)
   );
 
+  copyTemplate(context,"simple-html-view/view.xml.template",context.answers.name+"/src/main/resources/view.xml");
   // delete the template file
   cleanUp(context);
-  copyTemplate(context,"simple-html-view/view.xml.template",context.answers.name+"/src/main/resources/view.xml");
 
 };
 
@@ -72,15 +77,15 @@ var handleSpring = function(type,context){
   console.log("Creating the " + context.answers.name + " view folder");
 
   context.fs.copy(
-      context.templatePath('spring-view'),
+      context.templatePath('spring-view/'),
       context.destinationPath(context.answers.name)
   );
 
-  // delete the template file
-  cleanUp(context);
   copyTemplate(context,"spring-view/view.xml.template",context.answers.name+"/src/main/resources/view.xml");
   copyTemplate(context,"spring-view/pom.xml",context.answers.name+"/pom.xml");
   copyTemplate(context,"spring-view/docs/index.md",context.answers.name+"/docs/index.md");
+  // delete the template file
+  cleanUp(context);
 
 
   //overwrite the pom.xml and doc files
@@ -101,23 +106,57 @@ var handleServlet = function(type,context){
   console.log("Creating the " + context.answers.name + " view folder");
 
   context.fs.copy(
-      context.templatePath('servlet-view'),
+      context.templatePath('servlet-view/'),
       context.destinationPath(context.answers.name)
   );
 
-  // delete the template file
-  cleanUp(context);
   copyTemplate(context,"servlet-view/view.xml.template",context.answers.name+"/src/main/resources/view.xml");
   copyTemplate(context,"servlet-view/pom.xml",context.answers.name+"/pom.xml");
   copyTemplate(context,"servlet-view/docs/index.md",context.answers.name+"/docs/index.md");
+  // delete the template file
+  cleanUp(context);
+
+
+};
+
+var handleJavaEmber = function(type,context){
+
+  if(type != "simple-java-ember")
+    return;
+
+  // copy the view.xml template and update it with information
+  // and move it to the view resources folder
+
+  //copy over the directory
+
+  console.log("Creating the " + context.answers.name + " view folder");
+
+  var destination = context.ambariLocation.ambariLocation + "/contrib/views"+"/"+context.answers.name;
+  mkdirp(destination);
+
+  context.fs.copy(
+      context.templatePath('simple-java-ember/'),
+      destination
+  );
+
+  copyTemplate(context,"simple-java-ember/view.xml.template",destination+"/src/main/resources/view.xml");
+  copyTemplate(context,"simple-java-ember/pom.xml",destination+"/pom.xml");
+  copyTemplate(context,"simple-java-ember/docs/index.md",destination+"/docs/index.md");
+  // delete the template file
+  cleanUp(context);
 
 
 };
 
 
 
-var handlers = [handleSimpleHtml,handleSpring];
+var handlers = [handleSimpleHtml,handleSpring,handleServlet,handleJavaEmber];
 
+function isJavaView(answers) {
+  return answers.framework === "includeSpring" || answers.framework === "includeSpringEmber"
+      || answers.framework === "includeJerseyEmber" || answers.framework === "includeJersey"
+      || answers.framework === "includeServlet";
+}
 module.exports = yeoman.Base.extend({
   prompting: function () {
     return this.prompt([{
@@ -167,9 +206,7 @@ module.exports = yeoman.Base.extend({
     },
       {
         when: function (answers) {
-          return answers.framework === "includeSpring" || answers.framework === "includeSpringEmber"
-              || answers.framework === "includeJerseyEmber" || answers.framework === "includeJersey"
-              || answers.framework === "includeServlet";
+          return isJavaView(answers);
         },
         type: 'checkbox',
         name: 'libraries',
@@ -221,6 +258,70 @@ module.exports = yeoman.Base.extend({
     ]).then(function (answers) {
       this.answers = answers;
     }.bind(this));
+  },
+
+  ambariExists:function(){
+    console.log(process.cwd());
+    if(isJavaView(this.answers)) {
+      // Ask for the Ambari location on filesystem
+      console.log("--------------------------------------------------");
+      console.log("Java views can only be developed with dependencies");
+      console.log("and need to be built within the Ambari ecosystem");
+      console.log("--------------------------------------------------");
+      return this.prompt([{
+        type: 'confirm',
+        name: 'ambariExists',
+        message: 'Do you have Ambari set up for development ?',
+        default: true // Default to current folder name
+      }]).then(function (ambariExists) {
+        this.ambariExists = ambariExists;
+      }.bind(this));
+    }
+
+  },
+
+  ambariOrClone: function(){
+    if(isJavaView(this.answers)) {
+      if (this.ambariExists.ambariExists) {
+        return this.prompt([{
+          type: 'input',
+          name: 'ambariLocation',
+          message: 'Please enter the complete path now',
+          default: os.homedir() + "/ambari" // Default to current folder name
+        }]).then(function (ambariLocation) {
+          this.ambariLocation = ambariLocation;
+        }.bind(this));
+      } else {
+        console.log("--------------------------------------------------");
+        console.log("I will clone Ambari in your current directory");
+        console.log("---------------------Starting---------------------");
+        this.spawnCommandSync('git', ['clone', "https://github.com/apache/ambari.git"]);
+        console.log("---------------------Done-------------------------");
+
+        this.ambariLocation = process.cwd() + "/ambari";
+      }
+    }
+  },
+
+
+  verifyLocalAmbari: function(){
+    if(this.ambariExists.ambariExists) {
+      // verify the local Ambari installation
+      var stats = files.lstatSync(this.ambariLocation.ambariLocation);
+
+      // Is it a directory?
+      if (stats.isDirectory()) {
+        if(files.lstatSync(this.ambariLocation.ambariLocation+"/contrib/views").isDirectory())
+          console.log("--------------------------------------------------");
+          console.log("Detected valid Ambari development directory");
+          console.log("--------------------------------------------------");
+      } else {
+        console.log("Please check Ambari path and try again");
+        process.exit();
+
+      }
+    }
+
   },
 
   writing: function () {
