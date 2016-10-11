@@ -266,7 +266,6 @@ module.exports = yeoman.Base.extend({
   },
 
   ambariExists:function(){
-    console.log(process.cwd());
     if(isJavaView(this.answers)) {
       // Ask for the Ambari location on filesystem
       console.log("--------------------------------------------------");
