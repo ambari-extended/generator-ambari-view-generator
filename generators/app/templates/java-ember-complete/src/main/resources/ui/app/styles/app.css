@@ -1,0 +1,68 @@
+.table-search-comp * , .table-search-comp .list-group-item {
+  border-radius: 0;
+}
+
+.dropdown-toggle {
+  border:none;
+}
+
+#custom-search-input .search-query {
+  background-color: #f5f5f5;
+  border: 1px solid #ddd;
+  height: 40px;
+}
+
+#custom-search-input .input-group-btn {
+  position: absolute;
+  right: 15px;
+  top: 3px;
+}
+
+#custom-search-input button {
+  border: 0;
+  background: none;
+  /** belows styles are working good */
+  padding: 2px 5px;
+  margin-top: 2px;
+  position: relative;
+  left: -10px;
+  /* IE7-8 doesn't have border-radius, so don't indent the padding */
+  margin-bottom: 0;
+  -webkit-border-radius: 3px;
+  -moz-border-radius: 3px;
+  border-radius: 3px;
+  color:#000;
+
+}
+
+.search-query:focus + button {
+  z-index: 3;
+}
+
+.list-group-item.active, .list-group-item.active:hover, .list-group-item.active:focus {
+  background-color: #fffce2;
+  color: #000;
+  border-color: #DDD;
+}
+
+
+ul.list-group {
+  list-style: none
+}
+
+ul.list-group li{
+  position: relative;
+}
+
+ul.list-group li a {
+  border-top: none;
+}
+
+.tbl-item-list{
+  height:80vh;
+  overflow-y: scroll;
+}
+
+.btn-transparent, .btn-transparent:hover{
+  background-color: transparent;
+}

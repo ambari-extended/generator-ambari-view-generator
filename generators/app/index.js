@@ -9,7 +9,7 @@ var mkdirp = require('mkdirp');
 
 
 var mapping = {"includeHTML":"simple-html-view","includeSpring":"spring-view","includeServlet":"servlet-view",
-              "includeJerseyEmber":"simple-java-ember"};
+              "includeJerseyEmber":"simple-java-ember","includeJavaEmber":"java-ember-complete"};
 
 
 //Utilities
@@ -154,13 +154,46 @@ var handleJavaEmber = function(type,context){
 
 };
 
+var handleJavaEmberComplete = function(type,context){
+
+  if(type != "java-ember-complete")
+    return;
+
+  // copy the view.xml template and update it with information
+  // and move it to the view resources folder
+
+  //copy over the directory
+
+  console.log("Creating the " + context.answers.name + " view folder");
+
+  var ambariLocation = context.ambariExists.ambariExists? context.ambariLocation.ambariLocation:context.ambariLocation;
+  var destination = ambariLocation + "/contrib/views"+"/"+context.answers.name;
+  mkdirp(destination);
+
+  context.fs.copy(
+      context.templatePath('java-ember-complete'),
+      destination
+  );
+
+  copyTemplate(context,"java-ember-complete/view.xml.template",destination+"/src/main/resources/view.xml",true);
+  copyTemplate(context,"java-ember-complete/pom.xml",destination+"/pom.xml",true);
+  copyTemplate(context,"java-ember-complete/src/main/resources/view.log4j.properties",destination+"/src/main/resources/view.log4j.properties",true);
+  // delete the template file
+  cleanUp(context,destination);
 
 
-var handlers = [handleSimpleHtml,handleSpring,handleServlet,handleJavaEmber];
+};
+
+
+
+var handlers = [handleSimpleHtml,handleSpring,handleServlet,handleJavaEmber,handleJavaEmberComplete];
 
 function isJavaView(answers) {
-  return answers.framework === "includeSpring" || answers.framework === "includeSpringEmber"
-      || answers.framework === "includeJerseyEmber" || answers.framework === "includeJersey"
+  return answers.framework === "includeSpring"
+      || answers.framework === "includeSpringEmber"
+      || answers.framework === "includeJerseyEmber"
+      || answers.framework === "includeJersey"
+      || answers.framework === "includeJavaEmber"
       || answers.framework === "includeServlet";
 }
 module.exports = yeoman.Base.extend({
@@ -198,8 +231,11 @@ module.exports = yeoman.Base.extend({
         name: 'Spring',
         value: 'includeSpring'
       },{
-        name: 'Jersey with EmberJS',
+        name: 'Java with EmberJS (Skeleton app)',
         value: 'includeJerseyEmber'
+      },{
+        name: 'Java with EmberJS (Complete hello world)',
+        value: 'includeJavaEmber'
       },{
         name: 'Plain old Java servlet',
         value: 'includeServlet'
@@ -208,58 +244,7 @@ module.exports = yeoman.Base.extend({
         value: 'includeHTML'
       }]
       ,default: 1
-    },
-      {
-        when: function (answers) {
-          return isJavaView(answers);
-        },
-        type: 'checkbox',
-        name: 'libraries',
-        message: 'Which HDP libraries do you want',
-        choices: [{
-          name: 'Hadoop',
-          value: 'includeHdp',
-          checked: false
-        }, {
-          name: 'Hive',
-          value: 'includeHive',
-          checked: false
-        }, {
-          name: 'Pig',
-          value: 'includePig',
-          checked: false
-        }]
-      },
-      {
-        when: function (answers) {
-          if(!answers.libraries) return false;
-          return answers.libraries.indexOf("includeHdp") > -1;
-        },
-        type    : 'input',
-        name    : 'hdpVersion',
-        message : 'What version of Hadoop do you want ',
-        default : '2.7.1'
-      },
-      {
-        when: function (answers) {
-          if(!answers.libraries) return false;
-          return answers.libraries.indexOf("includeHive") > -1;
-        },
-        type    : 'input',
-        name    : 'hiveVersion',
-        message : 'What version of Hive do you want ',
-        default : '2.7.1'
-      },
-      {
-        when: function (answers) {
-          if(!answers.libraries) return false;
-          return answers.libraries.indexOf("includePig") > -1;
-        },
-        type    : 'input',
-        name    : 'pigVersion',
-        message : 'What version of Pig do you want ',
-        default : '2.7.1'
-      }
+    }
     ]).then(function (answers) {
       this.answers = answers;
     }.bind(this));
